@@ -25,25 +25,8 @@
 		this.ctx = context;
 
 		//Variables global to the chart
-		var computeDimension = function(element,dimension)
-		{
-			if (element['offset'+dimension])
-			{
-				return element['offset'+dimension];
-			}
-			else
-			{
-				return document.defaultView.getComputedStyle(element).getPropertyValue(dimension);
-			}
-		}
-
-		var width = this.width = computeDimension(context.canvas,'Width');
-		var height = this.height = computeDimension(context.canvas,'Height');
-
-		// Firefox requires this to work correctly
-		context.canvas.width  = width;
-		context.canvas.height = height;
-
+		var width = this.width = context.canvas.width;
+		var height = this.height = context.canvas.height;
 		this.aspectRatio = this.width / this.height;
 		//High pixel density displays - multiply the size of the canvas height/width by the device pixel ratio, then scale.
 		helpers.retinaScale(this);
@@ -842,7 +825,7 @@
 		},
 		stop : function(){
 			// Stops any current animation loop occuring
-			helpers.cancelAnimFrame.call(root, this.animationFrame);
+			helpers.cancelAnimFrame(this.animationFrame);
 			return this;
 		},
 		resize : function(callback){
@@ -1476,6 +1459,9 @@
 			this.xLabels.shift();
 			this.valuesCount--;
 			this.fit();
+		},
+		changeXLabel : function(idx, label){
+			this.xLabels[idx] = label;
 		},
 		// Fitting loop to rotate x Labels and figure out what fits there, and also calculate how many Y steps to use
 		fit: function(){
@@ -2161,15 +2147,19 @@
 			this.render();
 		},
 		update : function(){
-			this.scale.update();
+			var scale = this.scale;
+
 			// Reset any highlight colours before updating.
 			helpers.each(this.activeElements, function(activeElement){
 				activeElement.restore(['fillColor', 'strokeColor']);
 			});
 
-			this.eachBars(function(bar){
+			this.eachBars(function(bar, i){
 				bar.save();
+				scale.changeXLabel(i, bar.label);
 			});
+
+			this.scale.update();
 			this.render();
 		},
 		eachBars : function(callback){
@@ -2433,12 +2423,12 @@
 			}
 		},
 		calculateCircumference : function(value){
-			return (Math.PI*2)*(value / this.total);
+			return (Math.PI*2)*(Math.abs(value) / this.total);
 		},
 		calculateTotal : function(data){
 			this.total = 0;
 			helpers.each(data,function(segment){
-				this.total += segment.value;
+				this.total += Math.abs(segment.value);
 			},this);
 		},
 		update : function(){
@@ -3078,6 +3068,8 @@
 			helpers.each(this.segments,function(segment){
 				segment.save();
 			});
+			
+			this.reflow();
 			this.render();
 		},
 		reflow : function(){

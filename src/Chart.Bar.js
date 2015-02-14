@@ -140,15 +140,19 @@
 			this.render();
 		},
 		update : function(){
-			this.scale.update();
+			var scale = this.scale;
+
 			// Reset any highlight colours before updating.
 			helpers.each(this.activeElements, function(activeElement){
 				activeElement.restore(['fillColor', 'strokeColor']);
 			});
 
-			this.eachBars(function(bar){
+			this.eachBars(function(bar, i){
 				bar.save();
+				scale.changeXLabel(i, bar.label);
 			});
+
+			this.scale.update();
 			this.render();
 		},
 		eachBars : function(callback){
